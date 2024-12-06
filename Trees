@@ -1,0 +1,25 @@
+import java.util.List;
+import java.util.Random;
+
+/**
+*A simple model of trees.
+*Trees can grow every five turns and can take over grass.
+
+*@author David J. Barnes and Michael Kölling
+* @version 2016.02.29 (2)
+*/
+
+public Trees extends Organism
+{
+//the trees reproducing each turn
+private static final double SPREAD_PROBABILITY = 0.2;
+//the trees channce of dying in a fire is 65%
+private static final double FIRE_DEATH_PROBABILITY=0.65;
+//maximum vegetables per square is 10
+private static final int MAX_VEGETABLE_UNITS=10;
+//vegetation growth is random
+private static final Random rand = Randomizer.getRandom();
+
+
+
+
