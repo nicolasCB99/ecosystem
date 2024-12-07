@@ -1,0 +1,132 @@
+import java.util.List;
+import java.util.Random;
+
+/**
+ * A simple model of deer.
+ * Deer eat grass, move to food sources, reproduce, and die based on health.
+ * 
+ *@author David J. Barnes and Michael Kölling
+* @version 2016.02.29 (2)
+*/
+
+public class Deer extends Animal {
+    // Maximum health
+    private static final int MAX_HEALTH = 100;
+    // Health lost per turn
+    private static final int HEALTH_DECAY = 5;
+    // Health gained from eating grass
+    private static final int HEALTH_GAIN_FROM_GRASS = 20; 
+    // Health needed to reproduce
+    private static final int REPRODUCTION_THRESHOLD = 80; 
+    // Chance to reproduce
+    private static final double REPRODUCTION_PROBABILITY = 0.25; 
+    // Chance to die in fire
+    private static final double FIRE_DEATH_PROBABILITY = 0.6; 
+
+    // Random number generator for probability calculations
+    private static final Random rand = Randomizer.getRandom();
+
+    // Instance variables
+   // Current health of the deer
+    private int health; 
+
+    /**
+     * Create a new Deer object.
+     * 
+     * @param field    The field currently occupied.
+     * @param location The location within the field.
+     */
+    public Deer(Field field, Location location) {
+        super(field, location);
+        health = MAX_HEALTH;
+    }
+
+    /**
+     * Defines deer behavior each turn: move, eat grass, reproduce, and track health.
+     * 
+     * @param newDeer A list to return newly born deer.
+     */
+
+    @Override
+    public void act(List<Animal> newDeer) {
+        if (isAlive()) {
+            moveToFood(); // Prioritize moving toward food
+            eatGrass(); // Eat if on grass
+            reproduce(newDeer); // Attempt to reproduce
+            health -= HEALTH_DECAY; // Reduce health over time
+            if (health <= 0) {
+                setDead(); // Die if health reaches zero
+            }
+        }
+    }
+
+    /**
+     * Move the deer to a squaree with the most grass or to a random free location.
+     */
+    private void moveToFood() {
+        Field field = getField();
+        List<Location> adjacent = field.adjacentLocations(getLocation());
+        Location bestLocation = null;
+
+        for (Location loc : adjacent) {
+            Object organism = field.getObjectAt(loc);
+            if (organism instanceof Grass && ((Grass) organism).isAlive()) {
+                bestLocation = loc; // Move to the first square with grass
+                break;
+            }
+        }
+
+        if (bestLocation != null) {
+            setLocation(bestLocation);
+        } else {
+            // Move randomly if no food is found
+            Location randomLocation = field.randomAdjacentLocation(getLocation());
+            if (randomLocation != null) {
+                setLocation(randomLocation);
+            }
+        }
+    }
+
+    /**
+     * Eat grass if present in current square and increase health.
+     */
+    private void eatGrass() {
+        Field field = getField();
+        Object organism = field.getObjectAt(getLocation());
+
+        if (organism instanceof Grass) {
+            Grass grass = (Grass) organism;
+            if (grass.isAlive()) {
+                grass.markAsEaten();
+                health += HEALTH_GAIN_FROM_GRASS;
+                health = Math.min(health, MAX_HEALTH); // Cap health at max value
+            }
+        }
+    }
+
+    /**
+     * Deer reproduces if health is high enough and a free location is available.
+     * 
+     * @param newDeer A list to return newly born deer.
+     */
+    private void reproduce(List<Animal> newDeer) {
+        if (health >= REPRODUCTION_THRESHOLD && rand.nextDouble() <= REPRODUCTION_PROBABILITY) {
+            Field field = getField();
+            Location freeLocation = field.freeAdjacentLocation(getLocation());
+
+            if (freeLocation != null) {
+                Deer young = new Deer(field, freeLocation);
+                newDeer.add(young);
+            }
+        }
+    }
+
+    /**
+     * Handle fire events. The deer may die based on fire death probability.
+     */
+    public void killedByFire() {
+        if (rand.nextDouble() <= FIRE_DEATH_PROBABILITY) {
+            setDead();
+        }
+    }
+}
